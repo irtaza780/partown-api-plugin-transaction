@@ -1,6 +1,5 @@
 import { myStartup } from "./src/startup";
 
-
 function myPublishProductToCatalog(
   catalogProduct,
   { context, product, shop, variants }
