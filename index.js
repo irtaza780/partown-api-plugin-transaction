@@ -1,26 +1,31 @@
-import { myStartup } from "./src/startup";
+import { createRequire } from "module";
+import importAsString from "@reactioncommerce/api-utils/importAsString.js";
+import resolver from "./src/resolver";
+const schemas = importAsString("./schema/schema.graphql");
+const require = createRequire(import.meta.url);
+const pkg = require("../package.json");
 
-function myPublishProductToCatalog(
-  catalogProduct,
-  { context, product, shop, variants }
-) {
-  catalogProduct.variants &&
-    catalogProduct.variants.map((catalogVariant) => {
-      const productVariant = variants.find(
-        (variant) => variant._id === catalogVariant.variantId
-      );
-      catalogVariant.volume = productVariant.volume || null;
-    });
-}
-
+console.log("Schema here", schemas);
+/**
+ * @summary Import and call this function to add this plugin to your API.
+ * @param {Object} app The ReactionAPI instance
+ * @returns {undefined}
+ */
 export default async function register(app) {
   await app.registerPlugin({
-    label: "Product Dimensions",
-    name: "products-dimensions",
-    version: "1.0",
-    functionsByType: {
-      startup: [myStartup],
-      publishProductToCatalog: [myPublishProductToCatalog],
+    label: pkg.label,
+    name: pkg.name,
+    version: pkg.version,
+    collections: {
+      Transactions: {
+        name: "Transactions",
+        updatedAt: { type: Date, default: Date.now },
+        createdAt: { type: Date, default: Date.now },
+      },
+    },
+    graphQL: {
+      schemas: [schemas],
+      resolver,
     },
   });
 }

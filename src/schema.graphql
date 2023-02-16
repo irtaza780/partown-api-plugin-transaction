@@ -1,11 +1,23 @@
-extend type ProductVariant {
-  volume: Float
+input transactionInput {
+  _id: String
+  amount: Float
 }
 
-extend input ProductVariantInput {
-  volume: Float
+type transactionOutput {
+  success: Boolean
+  message: String
+  status: Int
 }
 
-extend type CatalogProductOrVariant {
-  volume: Float
+type transaction {
+  _id: String
+  amount: Float
+}
+
+extend type Mutation {
+  makeTransaction(input: transactionInput): transactionOutput
+}
+
+extend type Query {
+  getTransactions: transaction
 }
