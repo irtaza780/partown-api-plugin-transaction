@@ -1,20 +1,31 @@
+import { createRequire } from "module";
 import importAsString from "@reactioncommerce/api-utils/importAsString.js";
+import resolvers from "./resolver/resolver.js";
+const schemas = importAsString("./schema/schema.graphql");
+const require = createRequire(import.meta.url);
+const pkg = require("../package.json");
 
-const mySchema = importAsString("./schema.graphql");
-
+console.log("Schema here", schemas);
+/**
+ * @summary Import and call this function to add this plugin to your API.
+ * @param {Object} app The ReactionAPI instance
+ * @returns {undefined}
+ */
 export default async function register(app) {
   await app.registerPlugin({
-    label: "Product Dimensions",
-    name: "products-dimensions",
-    version: "1.0",
-    functionsByType: {
-      startup: [myStartup],
-      publishProductToCatalog: [myPublishProductToCatalog],
+    label: pkg.label,
+    name: pkg.name,
+    version: pkg.version,
+    collections: {
+      Transactions: {
+        name: "Transactions",
+        updatedAt: { type: Date, default: Date.now },
+        createdAt: { type: Date, default: Date.now },
+      },
     },
     graphQL: {
-      schemas: [mySchema],
+      schemas: [schemas],
+      resolvers,
     },
   });
 }
-
-

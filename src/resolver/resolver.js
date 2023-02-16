@@ -4,15 +4,30 @@ import decodeOpaqueId from "@reactioncommerce/api-utils/decodeOpaqueId.js";
 console.log("object id is ");
 console.log(ObjectID);
 
-export const resolver = {
+export default {
   Mutation: {
-    async createTransaction(parent, args, context, info) {
+    async makeTransaction(parent, args, context, info) {
       try {
-        console.log("args are ");
-        console.log(args);
-        console.log("success");
+        let { amount } = args.input;
+        let { Transactions } = context.collections;
+        console.log("collections are ");
+        console.log(context.collections);
+        console.log("transactions are ");
+        console.log(Transactions);
+        let createdTransaction = await Transactions.insertOne({ amount });
+        console.log("Created transaction is ", createdTransaction);
+        return {
+          success: true,
+          message: "Transaction Created",
+          status: 200,
+        };
       } catch (err) {
         console.log("error is ", err);
+        return {
+          success: false,
+          message: `Server Error ${err}`,
+          status: 500,
+        };
       }
     },
   },

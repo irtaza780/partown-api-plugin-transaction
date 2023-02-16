@@ -12,10 +12,11 @@ type transactionOutput {
 type transaction {
   _id: String
   amount: Float
+  transactionOutput: transactionOutput
 }
 
 extend type Mutation {
-  makeTransaction(input: transactionInput): transactionOutput
+  makeTransaction(input: transactionInput): transaction
 }
 
 extend type Query {
