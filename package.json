@@ -1,8 +1,8 @@
 {
-  "name": "@reactioncommerce/api-plugin-example",
-  "description": "Boilerplate Example plugin for the Reaction API",
-  "label": "Example Plugin",
-  "version": "0.0.0-development",
+  "name": "@partown/partown-api-plugin-transaction",
+  "description": "Plugin for handling user transactions",
+  "label": "Transaction Plugin",
+  "version": "1.0.0-development",
   "main": "index.js",
   "type": "module",
   "engines": {
@@ -16,9 +16,9 @@
     "url": "git+https://github.com/reactioncommerce/api-plugin-example.git"
   },
   "author": {
-    "name": "Mailchimp Open Commerce",
-    "email": "hello-open-commerce@mailchimp.com",
-    "url": "https://mailchimp.com/developer/open-commerce/"
+    "name": "Irtaza780",
+    "email": "irtaza780@gmail.com",
+    "url": "https://github.com/irtaza780/partown-api-plugin-transaction"
   },
   "license": "Apache-2.0",
   "bugs": {
