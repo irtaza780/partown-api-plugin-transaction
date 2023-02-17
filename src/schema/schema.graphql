@@ -1,6 +1,7 @@
 input transactionInput {
   _id: String
   amount: Float
+  isApproved: Boolean
 }
 
 type transactionOutput {
@@ -12,13 +13,23 @@ type transactionOutput {
 type transaction {
   _id: String
   amount: Float
+  isApproved: Boolean
+  transactionBy: String
   transactionOutput: transactionOutput
 }
 
 extend type Mutation {
   makeTransaction(input: transactionInput): transaction
+  deleteTransaction(transactionId: String!): transaction
+  approveTransaction(transactionId: String!): transaction
+}
+
+type transactions {
+  transactions: [transaction]
+  response: transactionOutput
 }
 
 extend type Query {
-  getTransactions: transaction
+  getAllTransactions: transactions
+  getUserTransactions: transactions
 }
