@@ -1,15 +1,12 @@
 import ObjectID from "mongodb";
 import decodeOpaqueId from "@reactioncommerce/api-utils/decodeOpaqueId.js";
 
-console.log("object id is ");
-console.log(ObjectID);
-
 export default {
   Mutation: {
     async makeTransaction(parent, args, context, info) {
       try {
-        let { amount } = args.input;
-        let { Transactions } = context.collections;
+        let { amount, transactionType } = args.input;
+        let { Transactions, Accounts } = context.collections;
         let { auth, authToken, userId } = context;
 
         if (!authToken) {
@@ -31,21 +28,34 @@ export default {
             },
           };
         }
-
+        let userAccount = await Accounts.findOne({ userId });
+        console.log("users account is ");
+        console.log(userAccount);
+        let userTransactionId = userAccount?.profile?.transactionId;
+        console.log("user transaction is ");
+        console.log(userTransactionId);
         let data = {
           amount,
-          isApproved: false,
+          approvalStatus: "pending",
           transactionBy: userId,
+          transactionId: userTransactionId,
+          transactionType: transactionType,
         };
         let createdTransaction = await Transactions.insertOne(data);
         console.log("Created transaction is ", createdTransaction);
-        return {
-          transactionOutput: {
+        if (createdTransaction?.result?.n > 0) {
+          return {
             success: true,
             message: "Transaction Created",
             status: 200,
-          },
-        };
+          };
+        } else {
+          return {
+            success: false,
+            message: "Unable to create transaction",
+            status: 200,
+          };
+        }
       } catch (err) {
         console.log("error is ", err);
         return {

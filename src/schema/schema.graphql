@@ -1,7 +1,17 @@
+enum transactionType {
+  deposit
+  withdraw
+}
+
+enum approvalStatusEnum {
+  approved
+  rejected
+  pending
+}
+
 input transactionInput {
-  _id: String
-  amount: Float
-  isApproved: Boolean
+  amount: Float!
+  transactionType: transactionType!
 }
 
 type transactionOutput {
@@ -13,15 +23,16 @@ type transactionOutput {
 type transaction {
   _id: String
   amount: Float
-  isApproved: Boolean
+  approvalStatus: approvalStatusEnum
   transactionBy: String
-  transactionOutput: transactionOutput
+  transactionId: String
+  transactionType: transactionType
 }
 
 extend type Mutation {
-  makeTransaction(input: transactionInput): transaction
-  deleteTransaction(transactionId: String!): transaction
-  approveTransaction(transactionId: String!): transaction
+  makeTransaction(input: transactionInput!): transactionOutput
+  deleteTransaction(transactionId: String!): transactionOutput
+  approveTransaction(transactionId: String!): transactionOutput
 }
 
 type transactions {
