@@ -1,6 +1,16 @@
 import ObjectID from "mongodb";
 import decodeOpaqueId from "@reactioncommerce/api-utils/decodeOpaqueId.js";
 
+function generateTransactionId() {
+  let result = "";
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+
+  for (let i = 0; i < 10; i++) {
+    result += characters.charAt(Math.floor(Math.random() * 10));
+  }
+  return result;
+}
+
 export default {
   Mutation: {
     async makeTransaction(parent, args, context, info) {
@@ -9,62 +19,28 @@ export default {
         let { Transactions, Accounts } = context.collections;
         let { auth, authToken, userId } = context;
 
-        if (!authToken) {
-          return {
-            transactionOutput: {
-              success: false,
-              message: "Unauthorized",
-              status: 401,
-            },
-          };
+        if (!authToken || !userId) {
+          return new Error("Unauthorized");
         }
 
-        if (!userId) {
-          return {
-            transactionOutput: {
-              success: false,
-              message: "Unauthorized",
-              status: 200,
-            },
-          };
-        }
         let userAccount = await Accounts.findOne({ userId });
-        console.log("users account is ");
-        console.log(userAccount);
+
         let userTransactionId = userAccount?.profile?.transactionId;
-        console.log("user transaction is ");
-        console.log(userTransactionId);
+
         let data = {
           amount,
           approvalStatus: "pending",
           transactionBy: userId,
-          transactionId: userTransactionId,
+          transactionId: generateTransactionId(),
           transactionType: transactionType,
         };
         let createdTransaction = await Transactions.insertOne(data);
-        console.log("Created transaction is ", createdTransaction);
-        if (createdTransaction?.result?.n > 0) {
-          return {
-            success: true,
-            message: "Transaction Created",
-            status: 200,
-          };
-        } else {
-          return {
-            success: false,
-            message: "Unable to create transaction",
-            status: 200,
-          };
-        }
+
+        console.log("created transaction is ", createdTransaction);
+
+        return { _id: createdTransaction?.insertedId };
       } catch (err) {
-        console.log("error is ", err);
-        return {
-          transactionOutput: {
-            success: false,
-            message: `Server Error ${err}`,
-            status: 500,
-          },
-        };
+        return err;
       }
     },
     async deleteTransaction(parent, args, context, info) {
@@ -118,53 +94,34 @@ export default {
         };
       }
     },
-    async approveTransaction(parent, args, context, info) {
+    async updateTransactionStatus(parent, args, context, info) {
       try {
-        let { transactionId } = args;
+        let { transactionId, approvalStatus } = args;
         let { authToken, collections } = context;
-        let { Transactions } = collections;
-        if (!authToken) {
-          return {
-            transactionOutput: {
-              success: false,
-              message: "Unauthorized",
-              status: 401,
-            },
-          };
-        }
+        let { Transactions, Trades } = collections;
 
-        let approvedTransaction = await Transactions.findAndUpdateOne(
+        if (!authToken) return new Error("Unauthorized");
+        console.log("input is ", args);
+
+        console.log("decoded id is ", decodeOpaqueId(transactionId).id);
+        let foundedTransaction = await Transactions.findOne({
+          transactionId,
+        });
+
+        console.log("founded transaction id is", foundedTransaction);
+
+        let approvedTransaction = await Transactions.update(
           {
-            _id: transactionId,
+            transactionId,
           },
-          { $set: { isApproved: true } }
+          { $set: { approvalStatus } }
         );
-        console.log(approvedTransaction, approvedTransaction?.result?.n);
-        if (approvedTransaction?.result?.n > 0)
-          return {
-            transaction: approvedTransaction,
-            transactionOutput: {
-              success: true,
-              message: "Transaction Approved",
-              status: 200,
-            },
-          };
-        else
-          return {
-            transactionOutput: {
-              success: false,
-              message: "Unable to approve transaction",
-              status: 200,
-            },
-          };
+        console.log("approved transaction is ", approvedTransaction);
+        if (approvedTransaction?.result?.n > 0) return true;
+
+        return new Error("not updated");
       } catch (err) {
-        return {
-          transactionOutput: {
-            success: false,
-            message: `Server Error ${err}`,
-            status: 500,
-          },
-        };
+        return err;
       }
     },
   },
@@ -173,36 +130,12 @@ export default {
       try {
         let { collections } = context;
         let { Transactions } = collections;
-        let allTransactions = await Transactions.find().toArray();
-        if (allTransactions?.length) {
-          return {
-            transactions: allTransactions,
-            response: {
-              success: true,
-              message: "Transactions Found",
-              status: 200,
-            },
-          };
-        } else {
-          return {
-            transactions: null,
-            response: {
-              success: false,
-              message: "No Transactions Found",
-              status: 200,
-            },
-          };
-        }
+        const transactions = await Transactions.find().toArray();
+        console.log("transactions are ", transactions);
+
+        return transactions;
       } catch (err) {
-        console.log(err);
-        return {
-          transactions: null,
-          response: {
-            success: false,
-            message: `Server Error ${err}`,
-            status: 500,
-          },
-        };
+        return err;
       }
     },
     async getUserTransactions(parents, args, context, info) {

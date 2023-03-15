@@ -10,6 +10,7 @@ enum approvalStatusEnum {
 }
 
 input transactionInput {
+  transactionBy: String!
   amount: Float!
   transactionType: transactionType!
 }
@@ -20,27 +21,26 @@ type transactionOutput {
   status: Int
 }
 
-type transaction {
-  _id: String
+type transaction implements Node {
+  _id: ID!
   amount: Float
   approvalStatus: approvalStatusEnum
   transactionBy: String
+  transactionByInfo: Account
   transactionId: String
   transactionType: transactionType
 }
 
 extend type Mutation {
-  makeTransaction(input: transactionInput!): transactionOutput
-  deleteTransaction(transactionId: String!): transactionOutput
-  approveTransaction(transactionId: String!): transactionOutput
-}
-
-type transactions {
-  transactions: [transaction]
-  response: transactionOutput
+  makeTransaction(input: transactionInput!): transaction
+  deleteTransaction(transactionId: String!): Boolean
+  updateTransactionStatus(
+    transactionId: String!
+    approvalStatus: approvalStatusEnum!
+  ): Boolean
 }
 
 extend type Query {
-  getAllTransactions: transactions
-  getUserTransactions: transactions
+  getAllTransactions: [transaction]
+  getUserTransactions: [transaction]
 }
