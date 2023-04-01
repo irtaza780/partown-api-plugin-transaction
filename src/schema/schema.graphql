@@ -29,6 +29,8 @@ type transaction implements Node {
   transactionByInfo: Account
   transactionId: String
   transactionType: transactionType
+  createdAt: DateTime
+  updatedAt: DateTime
 }
 
 extend type Mutation {
@@ -42,5 +44,5 @@ extend type Mutation {
 
 extend type Query {
   getAllTransactions: [transaction]
-  getUserTransactions: [transaction]
+  userTransactions: [transaction]
 }

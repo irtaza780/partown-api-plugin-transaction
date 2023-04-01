@@ -26,17 +26,17 @@ export default {
         let userAccount = await Accounts.findOne({ userId });
 
         let userTransactionId = userAccount?.profile?.transactionId;
-
+        const createdAt = new Date();
         let data = {
           amount,
           approvalStatus: "pending",
           transactionBy: userId,
           transactionId: generateTransactionId(),
           transactionType: transactionType,
+          createdAt,
+          updatedAt: createdAt,
         };
         let createdTransaction = await Transactions.insertOne(data);
-
-        console.log("created transaction is ", createdTransaction);
 
         return { _id: createdTransaction?.insertedId };
       } catch (err) {
@@ -114,7 +114,7 @@ export default {
           {
             transactionId,
           },
-          { $set: { approvalStatus } }
+          { $set: { approvalStatus, updatedAt: new Date() } }
         );
         console.log("approved transaction is ", approvedTransaction);
         if (approvedTransaction?.result?.n > 0) return true;
@@ -130,7 +130,9 @@ export default {
       try {
         let { collections } = context;
         let { Transactions } = collections;
-        const transactions = await Transactions.find().toArray();
+        const transactions = await Transactions.find()
+          .sort({ createdAt: -1 })
+          .toArray();
         console.log("transactions are ", transactions);
 
         return transactions;
@@ -138,54 +140,23 @@ export default {
         return err;
       }
     },
-    async getUserTransactions(parents, args, context, info) {
+    async userTransactions(parents, args, context, info) {
       try {
-        let { auth, authToken, userId, collections } = context;
+        let { authToken, userId, collections } = context;
         let { Transactions } = collections;
+        console.log("user id is ", userId);
+        if (!authToken) return new Error("Unauthorized");
 
-        if (!authToken) {
-          return {
-            transactions: null,
-            response: {
-              success: false,
-              message: "Unauthorized",
-              status: 401,
-            },
-          };
-        }
         let userTransactions = await Transactions.find({
           transactionBy: userId,
+          approvalStatus: "approved",
         }).toArray();
+
         console.log("user transactions are");
         console.log(userTransactions);
-        if (userTransactions?.length) {
-          return {
-            transactions: userTransactions,
-            response: {
-              success: true,
-              message: "Transactions Found",
-              status: 200,
-            },
-          };
-        } else {
-          return {
-            transactions: userTransactions,
-            response: {
-              success: false,
-              message: "No Transactions Found",
-              status: 200,
-            },
-          };
-        }
+        return userTransactions;
       } catch (err) {
-        return {
-          transactions: null,
-          response: {
-            success: false,
-            message: `Server Error ${err}`,
-            status: 500,
-          },
-        };
+        return err;
       }
     },
   },
