@@ -1,6 +1,6 @@
 import ObjectID from "mongodb";
 import decodeOpaqueId from "@reactioncommerce/api-utils/decodeOpaqueId.js";
-
+import _ from "lodash";
 function generateTransactionId() {
   let result = "";
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
@@ -128,12 +128,23 @@ export default {
   Query: {
     async getAllTransactions(parents, args, context, info) {
       try {
-        let { collections } = context;
+        const{ collections } = context;
+        const { filters } = args;
+
+        const sortBy = _.get(filters, "sortBy");
+
         let { Transactions } = collections;
-        const transactions = await Transactions.find()
+
+        let filter = {};
+        if (sortBy) {
+          filter = {
+            transactionType: sortBy,
+          };
+        }
+
+        const transactions = await Transactions.find(filter)
           .sort({ createdAt: -1 })
           .toArray();
-        console.log("transactions are ", transactions);
 
         return transactions;
       } catch (err) {
@@ -143,6 +154,7 @@ export default {
     async userTransactions(parents, args, context, info) {
       try {
         let { authToken, userId, collections } = context;
+
         let { Transactions } = collections;
         console.log("user id is ", userId);
         if (!authToken) return new Error("Unauthorized");

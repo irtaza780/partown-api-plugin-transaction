@@ -9,6 +9,18 @@ enum approvalStatusEnum {
   pending
 }
 
+enum sortOrder {
+  "asc"
+  asc
+
+  "desc"
+  desc
+}
+
+input filters {
+  sortBy: transactionType
+}
+
 input transactionInput {
   transactionBy: String!
   amount: Float!
@@ -31,6 +43,7 @@ type transaction implements Node {
   transactionType: transactionType
   createdAt: DateTime
   updatedAt: DateTime
+  sortOrder: sortOrder
 }
 
 extend type Mutation {
@@ -43,6 +56,6 @@ extend type Mutation {
 }
 
 extend type Query {
-  getAllTransactions: [transaction]
+  getAllTransactions(filters: filters): [transaction]
   userTransactions: [transaction]
 }
