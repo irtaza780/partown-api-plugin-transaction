@@ -1,6 +1,7 @@
 import ObjectID from "mongodb";
 import decodeOpaqueId from "@reactioncommerce/api-utils/decodeOpaqueId.js";
 import _ from "lodash";
+import validateUser from "../utils/validateUser.js";
 function generateTransactionId() {
   let result = "";
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
@@ -16,22 +17,26 @@ export default {
     async makeTransaction(parent, args, context, info) {
       try {
         let { amount, transactionType } = args.input;
-        let { Transactions, Accounts } = context.collections;
-        let { auth, authToken, userId } = context;
+
+        let { auth, authToken, userId, collections } = context;
+        let { Transactions, Accounts } = collections;
 
         if (!authToken || !userId) {
           return new Error("Unauthorized");
         }
+        await validateUser(context, userId);
 
         let userAccount = await Accounts.findOne({ userId });
 
-        let userTransactionId = userAccount?.profile?.transactionId;
+        let userTransactionId = userAccount?.profile?.transactionId
+          ? userAccount?.profile?.transactionId
+          : "n/a";
         const createdAt = new Date();
         let data = {
           amount,
           approvalStatus: "pending",
           transactionBy: userId,
-          transactionId: generateTransactionId(),
+          transactionId: userTransactionId,
           transactionType: transactionType,
           createdAt,
           updatedAt: createdAt,
@@ -128,21 +133,21 @@ export default {
   Query: {
     async getAllTransactions(parents, args, context, info) {
       try {
-        const{ collections } = context;
+        const { collections } = context;
         const { filters } = args;
 
         const sortBy = _.get(filters, "sortBy");
 
         let { Transactions } = collections;
 
-        let filter = {};
+        let filter = {
+          transactionType: { $ne: null, $exists: true },
+        };
         if (sortBy) {
-          filter = {
-            transactionType: sortBy,
-          };
+          filter.transactionType = sortBy;
         }
 
-        const transactions = await Transactions.find(filter)
+        const transactions = await Transactions.find(filter, {})
           .sort({ createdAt: -1 })
           .toArray();
 

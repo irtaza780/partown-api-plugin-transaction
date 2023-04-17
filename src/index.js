@@ -4,6 +4,7 @@ import resolvers from "./resolver/resolver.js";
 const schemas = importAsString("./schema/schema.graphql");
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json");
+import mutations from "./mutations/index.js";
 
 console.log("Schema here", schemas);
 /**
@@ -27,5 +28,6 @@ export default async function register(app) {
       schemas: [schemas],
       resolvers,
     },
+    mutations,
   });
 }

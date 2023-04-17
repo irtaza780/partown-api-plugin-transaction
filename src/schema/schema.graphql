@@ -3,6 +3,11 @@ enum transactionType {
   withdraw
 }
 
+enum tradeTransactionType {
+  sell
+  buy
+}
+
 enum approvalStatusEnum {
   approved
   rejected
@@ -33,6 +38,12 @@ type transactionOutput {
   status: Int
 }
 
+type serviceCharges {
+  buyer: Float
+  seller: Float
+  total: Float
+}
+
 type transaction implements Node {
   _id: ID!
   amount: Float
@@ -41,6 +52,9 @@ type transaction implements Node {
   transactionByInfo: Account
   transactionId: String
   transactionType: transactionType
+  tradeTransactionType: tradeTransactionType
+  serviceCharges: serviceCharges
+  unitsQuantity: Float
   createdAt: DateTime
   updatedAt: DateTime
   sortOrder: sortOrder
