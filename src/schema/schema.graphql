@@ -44,7 +44,7 @@ type serviceCharges {
   total: Float
 }
 
-type transaction implements Node {
+type Transaction implements Node {
   _id: ID!
   amount: Float
   approvalStatus: approvalStatusEnum
@@ -60,8 +60,57 @@ type transaction implements Node {
   sortOrder: sortOrder
 }
 
+type TransactionEdge implements NodeEdge {
+  "The cursor that represents this node in the paginated results"
+  cursor: ConnectionCursor!
+
+  "The Transaction"
+  node: Transaction
+}
+
+type TransactionConnection {
+  "The list of nodes that match the query, wrapped in an edge to provide a cursor string for each"
+  edges: [TransactionEdge]
+
+  """
+  You can request the `nodes` directly to avoid the extra wrapping that `NodeEdge` has,
+  if you know you will not need to paginate the results.
+  """
+  nodes: [Transaction]
+
+  "Information to help a client request the next or previous page"
+  pageInfo: PageInfo!
+
+  "The total number of nodes that match your query"
+  totalCount: Int!
+}
+
+"""
+Wraps a list of `Accounts`, providing pagination cursors and information.
+
+For information about what Relay-compatible connections are and how to use them, see the following articles:
+- [Relay Connection Documentation](https://facebook.github.io/relay/docs/en/graphql-server-specification.html#connections)
+- [Relay Connection Specification](https://facebook.github.io/relay/graphql/connections.htm)
+- [Using Relay-style Connections With Apollo Client](https://www.apollographql.com/docs/react/recipes/pagination.html)
+"""
+type TransactionConnection {
+  "The list of nodes that match the query, wrapped in an edge to provide a cursor string for each"
+  edges: [TransactionEdge]
+
+  """
+  You can request the `nodes` directly to avoid the extra wrapping that `NodeEdge` has,
+  if you know you will not need to paginate the results.
+  """
+  nodes: [Transaction]
+
+  "Information to help a client request the next or previous page"
+  pageInfo: PageInfo!
+
+  "The total number of nodes that match your query"
+  totalCount: Int!
+}
 extend type Mutation {
-  makeTransaction(input: transactionInput!): transaction
+  makeTransaction(input: transactionInput!): Transaction
   deleteTransaction(transactionId: String!): Boolean
   updateTransactionStatus(
     transactionId: String!
@@ -70,7 +119,31 @@ extend type Mutation {
 }
 
 extend type Query {
-  getAllTransactions(filters: filters): [transaction]
-  getAllTradeTransactions(filters: filters, accountId: ID): [transaction]
-  userTransactions: [transaction]
+  getAllTransactions(
+    filters: filters
+    searchQuery: String
+
+    "Return only results that come after this cursor. Use this with `first` to specify the number of results to return."
+    after: ConnectionCursor
+
+    "Return only results that come before this cursor. Use this with `last` to specify the number of results to return."
+    before: ConnectionCursor
+
+    "Return at most this many results. This parameter may be used with either `after` or `offset` parameters."
+    first: ConnectionLimitInt
+
+    "Return at most this many results. This parameter may be used with the `before` parameter."
+    last: ConnectionLimitInt
+
+    "Return only results that come after the Nth result. This parameter may be used with the `first` parameter."
+    offset: Int
+
+    "Return results sorted in this order"
+    sortOrder: SortOrder = asc
+
+    "By default, groups are sorted by when they were created, oldest first. Set this to sort by one of the other allowed fields"
+    sortBy: AccountSortByField = createdAt
+  ): TransactionConnection!
+  getAllTradeTransactions(filters: filters, accountId: ID): [Transaction]
+  userTransactions: [Transaction]
 }

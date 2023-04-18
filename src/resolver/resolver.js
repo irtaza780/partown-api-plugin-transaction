@@ -1,5 +1,8 @@
 import ObjectID from "mongodb";
 import decodeOpaqueId from "@reactioncommerce/api-utils/decodeOpaqueId.js";
+import getPaginatedResponse from "@reactioncommerce/api-utils/graphql/getPaginatedResponse.js";
+import wasFieldRequested from "@reactioncommerce/api-utils/graphql/wasFieldRequested.js";
+
 import _ from "lodash";
 import validateUser from "../utils/validateUser.js";
 function generateTransactionId() {
@@ -134,24 +137,36 @@ export default {
     async getAllTransactions(parents, args, context, info) {
       try {
         const { collections } = context;
-        const { filters } = args;
-
-        const sortBy = _.get(filters, "sortBy");
+        const { filters, searchQuery, ...connectionArgs } = args;
 
         let { Transactions } = collections;
 
         let filter = {
           transactionType: { $ne: null, $exists: true },
         };
-        if (sortBy) {
-          filter.transactionType = sortBy;
+        if (searchQuery) {
+          filter.$or = [
+            {
+              transactionId: {
+                $regex: new RegExp(searchQuery, "i"),
+              },
+            },
+          ];
         }
 
-        const transactions = await Transactions.find(filter, {})
-          .sort({ createdAt: -1 })
-          .toArray();
+        const transactions = Transactions.find(filter);
 
-        return transactions;
+        console.log("transactions are ", transactions);
+
+        // return transactions;
+        return getPaginatedResponse(transactions, connectionArgs, {
+          includeHasNextPage: wasFieldRequested("pageInfo.hasNextPage", info),
+          includeHasPreviousPage: wasFieldRequested(
+            "pageInfo.hasPreviousPage",
+            info
+          ),
+          includeTotalCount: wasFieldRequested("totalCount", info),
+        });
       } catch (err) {
         return err;
       }
