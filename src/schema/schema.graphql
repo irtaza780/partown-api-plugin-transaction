@@ -71,5 +71,6 @@ extend type Mutation {
 
 extend type Query {
   getAllTransactions(filters: filters): [transaction]
+  getAllTradeTransactions(filters: filters, accountId: ID): [transaction]
   userTransactions: [transaction]
 }

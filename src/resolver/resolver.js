@@ -156,6 +156,36 @@ export default {
         return err;
       }
     },
+    async getAllTradeTransactions(parents, args, context, info) {
+      try {
+        const { collections, userId } = context;
+        const { filters, accountId } = args;
+        let idToUse = userId;
+        if (accountId) {
+          idToUse = decodeOpaqueId(accountId).id;
+        }
+        const sortBy = _.get(filters, "sortBy");
+
+        let { Transactions } = collections;
+
+        let filter = {
+          transactionBy: idToUse,
+          tradeTransactionType: { $ne: null, $exists: true },
+        };
+
+        if (sortBy) {
+          filter.tradeTransactionType = sortBy;
+        }
+
+        const transactions = await Transactions.find(filter, {})
+          .sort({ createdAt: -1 })
+          .toArray();
+
+        return transactions;
+      } catch (err) {
+        return err;
+      }
+    },
     async userTransactions(parents, args, context, info) {
       try {
         let { authToken, userId, collections } = context;
