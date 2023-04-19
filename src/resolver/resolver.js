@@ -156,9 +156,21 @@ export default {
 
         const transactions = Transactions.find(filter);
 
-        console.log("transactions are ", transactions);
+        // console.log("transactions are ", transactions);
 
         // return transactions;
+
+        // console.log(
+        //   "paginated response is ",
+        //   await getPaginatedResponse(transactions, connectionArgs, {
+        //     includeHasNextPage: wasFieldRequested("pageInfo.hasNextPage", info),
+        //     includeHasPreviousPage: wasFieldRequested(
+        //       "pageInfo.hasPreviousPage",
+        //       info
+        //     ),
+        //     includeTotalCount: wasFieldRequested("totalCount", info),
+        //   })
+        // );
         return getPaginatedResponse(transactions, connectionArgs, {
           includeHasNextPage: wasFieldRequested("pageInfo.hasNextPage", info),
           includeHasPreviousPage: wasFieldRequested(
@@ -174,12 +186,11 @@ export default {
     async getAllTradeTransactions(parents, args, context, info) {
       try {
         const { collections, userId } = context;
-        const { filters, accountId } = args;
+        const { filters, searchQuery, accountId, ...connectionArgs } = args;
         let idToUse = userId;
         if (accountId) {
           idToUse = decodeOpaqueId(accountId).id;
         }
-        const sortBy = _.get(filters, "sortBy");
 
         let { Transactions } = collections;
 
@@ -188,15 +199,26 @@ export default {
           tradeTransactionType: { $ne: null, $exists: true },
         };
 
-        if (sortBy) {
-          filter.tradeTransactionType = sortBy;
+        if (searchQuery) {
+          filter.$or = [
+            {
+              transactionId: {
+                $regex: new RegExp(searchQuery, "i"),
+              },
+            },
+          ];
         }
 
-        const transactions = await Transactions.find(filter, {})
-          .sort({ createdAt: -1 })
-          .toArray();
+        const transactions = Transactions.find(filter);
 
-        return transactions;
+        return getPaginatedResponse(transactions, connectionArgs, {
+          includeHasNextPage: wasFieldRequested("pageInfo.hasNextPage", info),
+          includeHasPreviousPage: wasFieldRequested(
+            "pageInfo.hasPreviousPage",
+            info
+          ),
+          includeTotalCount: wasFieldRequested("totalCount", info),
+        });
       } catch (err) {
         return err;
       }
