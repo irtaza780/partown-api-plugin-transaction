@@ -12,11 +12,11 @@
  */
 import decodeOpaqueId from "@reactioncommerce/api-utils/decodeOpaqueId.js";
 
-export default async function getAccountById(context, accountId) {
+export default async function getProductById(context, productId) {
   const { collections } = context;
-  const { Accounts } = collections;
-  let accountResponse = await Accounts.findOne({
-    _id: decodeOpaqueId(accountId).id,
+  const { Products } = collections;
+  let Product = await Products.findOne({
+    _id: decodeOpaqueId(productId).id,
   });
-  return accountResponse;
+  return Product;
 }

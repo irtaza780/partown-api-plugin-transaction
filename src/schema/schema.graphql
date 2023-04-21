@@ -12,6 +12,7 @@ enum approvalStatusEnum {
   approved
   rejected
   pending
+  completed
 }
 
 enum sortOrder {
@@ -23,7 +24,7 @@ enum sortOrder {
 }
 
 input filters {
-  sortBy: transactionType
+  sortByType: transactionType
 }
 
 input transactionInput {
@@ -58,6 +59,10 @@ type Transaction implements Node {
   createdAt: DateTime
   updatedAt: DateTime
   sortOrder: sortOrder
+  tradeBy: ID
+  tradeByInfo: Account
+  productId: ID
+  productInfo: Product
 }
 
 type TransactionEdge implements NodeEdge {
