@@ -121,6 +121,7 @@ extend type Mutation {
     transactionId: String!
     approvalStatus: approvalStatusEnum!
   ): Boolean
+  emailBankDetails(firstName: String!, lastName: String!): Boolean
 }
 
 extend type Query {

@@ -1,6 +1,6 @@
 import ObjectID from "mongodb";
 import decodeOpaqueId from "@reactioncommerce/api-utils/decodeOpaqueId.js";
-
+import ReactionError from "@reactioncommerce/reaction-error";
 import _ from "lodash";
 import validateUser from "../utils/validateUser.js";
 
@@ -129,6 +129,47 @@ export default {
       if (approvedTransaction?.result?.n > 0) return true;
 
       return false;
+    } catch (err) {
+      return err;
+    }
+  },
+  async emailBankDetails(parent, { firstName, lastName }, context, info) {
+    try {
+      const { authToken, userId, collections } = context;
+      const { Accounts, Shops } = collections;
+
+      if (!authToken || !userId)
+        throw new ReactionError("not-found", "Account not found");
+
+      let decodedAccountId = decodeOpaqueId(userId).id;
+
+      const bodyTemplate = "email/bankDetails";
+
+      const account = await Accounts.findOne({ _id: decodedAccountId });
+
+      if (!account) throw new ReactionError("not-found", "Account not found");
+
+      // Account emails are always sent from the primary shop email and using primary shop
+      // email templates.
+      const shop = await Shops.findOne({ shopType: "primary" });
+      if (!shop) throw new ReactionError("not-found", "Shop not found");
+
+      let email = _.get(account, "emails[0].address");
+
+      const dataForEmail = {
+        fullName: `${firstName} ${lastName}`,
+      };
+
+      const language =
+        (account.profile && account.profile.language) || shop.language;
+
+      context.mutations.sendEmail(context, {
+        data: dataForEmail,
+        fromShop: shop,
+        templateName: bodyTemplate,
+        language,
+        to: email,
+      });
     } catch (err) {
       return err;
     }
