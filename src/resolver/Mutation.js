@@ -109,23 +109,26 @@ export default {
       if (!authToken) return new Error("Unauthorized");
       console.log("input is ", args);
 
-      console.log("decoded id is ", decodeOpaqueId(transactionId).id);
       let foundedTransaction = await Transactions.findOne({
-        transactionId,
+        _id: ObjectID.ObjectId(transactionId),
       });
 
-      console.log("founded transaction id is", foundedTransaction);
+      if (foundedTransaction?.approvalStatus !== "pending") {
+        return new Error(
+          `This transaction is already ${foundedTransaction?.approvalStatus}`
+        );
+      }
 
       let approvedTransaction = await Transactions.update(
         {
-          transactionId,
+          _id: ObjectID.ObjectId(transactionId),
         },
         { $set: { approvalStatus, updatedAt: new Date() } }
       );
-      console.log("approved transaction is ", approvedTransaction);
+
       if (approvedTransaction?.result?.n > 0) return true;
 
-      return new Error("not updated");
+      return false;
     } catch (err) {
       return err;
     }
