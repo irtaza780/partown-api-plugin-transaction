@@ -83,6 +83,36 @@ export default {
       return err;
     }
   },
+  async getTradesHistory(parents, args, context, info) {
+    try {
+      const { userId, authToken, collections } = context;
+      const { Transactions } = collections;
+      let matchStage = { transactionBy: userId, transactionType: null };
+      const { searchQuery, ...connectionArgs } = args;
+
+      if (searchQuery) {
+        matchStage.productId = {
+          $in: await collections.Catalog.distinct("product._id", {
+            "product.title": { $regex: searchQuery, $options: "i" },
+          }),
+        };
+      }
+
+      const tradeHistory = Transactions.find(matchStage);
+
+      return getPaginatedResponse(tradeHistory, connectionArgs, {
+        includeHasNextPage: wasFieldRequested("pageInfo.hasNextPage", info),
+        includeHasPreviousPage: wasFieldRequested(
+          "pageInfo.hasPreviousPage",
+          info
+        ),
+        includeTotalCount: wasFieldRequested("totalCount", info),
+      });
+    } catch (err) {
+      return err;
+    }
+  },
+
   async userTransactions(parents, args, context, info) {
     try {
       let { authToken, userId, collections } = context;
