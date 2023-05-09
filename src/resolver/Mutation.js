@@ -102,7 +102,7 @@ export default {
   },
   async updateTransactionStatus(parent, args, context, info) {
     try {
-      let { transactionId, approvalStatus } = args;
+      let { transactionId, approvalStatus, transactionBy } = args;
       let { authToken, collections } = context;
       let { Transactions, Trades } = collections;
 
@@ -118,6 +118,20 @@ export default {
           `This transaction is already ${foundedTransaction?.approvalStatus}`
         );
       }
+      let decodedAccountId = decodeOpaqueId(transactionBy).id;
+
+      console.log(
+        "founded transaction is ",
+        foundedTransaction?.transactionType
+      );
+
+      let transactionType = "";
+      let amount = foundedTransaction?.amount;
+      if (foundedTransaction?.transactionType === "deposit") {
+        transactionType = "deposit";
+      } else if (foundedTransaction?.transactionType === "withdraw") {
+        transactionType = "withdrawal";
+      }
 
       let approvedTransaction = await Transactions.update(
         {
@@ -126,7 +140,20 @@ export default {
         { $set: { approvalStatus, updatedAt: new Date() } }
       );
 
-      if (approvedTransaction?.result?.n > 0) return true;
+      if (approvedTransaction?.result?.n > 0) {
+        await context.mutations.createNotification(context, {
+          title: "Transaction Approval",
+          details: `Your request for ${transactionType} of ₦${amount} has been ${approvalStatus}`,
+          hasDetails: true,
+          message: "click here to learn more",
+          status: null,
+          to: decodedAccountId,
+          type: "transaction",
+          image:
+            "https://images.pexels.com/photos/3172740/pexels-photo-3172740.jpeg?cs=srgb&dl=pexels-%E6%9D%8E%E8%BF%9B-3172740.jpg&fm=jpg&w=640&h=640",
+        });
+        return true;
+      }
 
       return false;
     } catch (err) {
