@@ -87,7 +87,20 @@ export default {
     try {
       const { userId, authToken, collections } = context;
       const { Transactions } = collections;
-      let matchStage = { transactionBy: userId, transactionType: null };
+
+      if (!userId || !authToken) return new Error("Unauthorized");
+
+      let matchStage = {
+        $and: [
+          { transactionBy: userId },
+          {
+            $or: [
+              { transactionType: { $exists: false } },
+              { transactionType: null },
+            ],
+          },
+        ],
+      };
       const { searchQuery, ...connectionArgs } = args;
 
       if (searchQuery) {

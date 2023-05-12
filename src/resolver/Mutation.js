@@ -104,14 +104,30 @@ export default {
     try {
       let { transactionId, approvalStatus, transactionBy } = args;
       let { authToken, collections } = context;
-      let { Transactions, Trades } = collections;
+      let { Transactions, Trades, Accounts } = collections;
 
       if (!authToken) return new Error("Unauthorized");
       console.log("input is ", args);
 
+      let userAccount = await Accounts.findOne({
+        _id: decodeOpaqueId(transactionBy).id,
+      });
+
+      console.log("user Account is ", userAccount);
+
       let foundedTransaction = await Transactions.findOne({
         _id: ObjectID.ObjectId(transactionId),
       });
+
+      if (
+        approvalStatus === "approved" &&
+        foundedTransaction?.transactionType === "withdraw" &&
+        userAccount?.wallets?.amount < foundedTransaction?.amount
+      ) {
+        return new Error(
+          "The user does not have sufficient funds to make this withdraw"
+        );
+      }
 
       if (foundedTransaction?.approvalStatus !== "pending") {
         return new Error(
@@ -140,12 +156,17 @@ export default {
         { $set: { approvalStatus, updatedAt: new Date() } }
       );
 
+      let title =
+        approvalStatus === "approved"
+          ? "Transaction Approved"
+          : "Transaction Rejected";
+
       if (approvedTransaction?.result?.n > 0) {
         await context.mutations.createNotification(context, {
-          title: "Transaction Approval",
+          title,
           details: `Your request for ${transactionType} of ₦${amount} has been ${approvalStatus}`,
           hasDetails: true,
-          message: "click here to learn more",
+          message: "",
           status: null,
           to: decodedAccountId,
           type: "transaction",
