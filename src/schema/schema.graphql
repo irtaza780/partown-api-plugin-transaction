@@ -31,6 +31,7 @@ input transactionInput {
   transactionBy: String!
   amount: Float!
   transactionType: transactionType!
+  transactionProof: String
 }
 
 type transactionOutput {
@@ -63,6 +64,7 @@ type Transaction implements Node {
   tradeByInfo: Account
   productId: ID
   productInfo: Product
+  transactionProof: String
 }
 
 type TransactionEdge implements NodeEdge {

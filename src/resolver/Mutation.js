@@ -17,7 +17,7 @@ function generateTransactionId() {
 export default {
   async makeTransaction(parent, args, context, info) {
     try {
-      let { amount, transactionType } = args.input;
+      let { amount, transactionType, transactionProof } = args.input;
 
       let { auth, authToken, userId, collections } = context;
       let { Transactions, Accounts } = collections;
@@ -26,6 +26,9 @@ export default {
         return new Error("Unauthorized");
       }
       await validateUser(context, userId);
+
+      if (transactionType === "deposit" && !transactionProof)
+        return new Error("Please provide proof of transaction");
 
       let userAccount = await Accounts.findOne({ userId });
 
@@ -41,6 +44,7 @@ export default {
         transactionType: transactionType,
         createdAt,
         updatedAt: createdAt,
+        transactionProof,
       };
       let createdTransaction = await Transactions.insertOne(data);
 
