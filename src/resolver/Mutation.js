@@ -188,10 +188,14 @@ export default {
   async emailBankDetails(parent, { firstName, lastName }, context, info) {
     try {
       const { authToken, userId, collections } = context;
-      const { Accounts, Shops } = collections;
+      const { Accounts, Shops, BankInfo } = collections;
 
+      //variables : firstName, lastName, headerMsg,
       if (!authToken || !userId)
         throw new ReactionError("not-found", "Account not found");
+
+      const accountResult = await Accounts.findOne({ _id: userId });
+      const bankDetailResult = await BankInfo.findOne({ isPlatformInfo: true });
 
       let decodedAccountId = decodeOpaqueId(userId).id;
 
@@ -201,15 +205,19 @@ export default {
 
       if (!account) throw new ReactionError("not-found", "Account not found");
 
-      // Account emails are always sent from the primary shop email and using primary shop
-      // email templates.
       const shop = await Shops.findOne({ shopType: "primary" });
       if (!shop) throw new ReactionError("not-found", "Shop not found");
 
       let email = _.get(account, "emails[0].address");
 
       const dataForEmail = {
-        fullName: `${firstName} ${lastName}`,
+        firstName: _.get(accountResult, "profile.firstName"),
+        lastName: _.get(accountResult, "profile.lastName"),
+        headerMsg: "Bank Details are",
+        sortCode: _.get(bankDetailResult, "sortCode"),
+        accountNumber: _.get(bankDetailResult, "accountNumber"),
+        accountName: _.get(bankDetailResult, "accountName"),
+        paymentReference: _.get(accountResult, "profile.transactionId"),
       };
 
       const language =
