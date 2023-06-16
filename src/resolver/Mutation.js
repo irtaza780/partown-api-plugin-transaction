@@ -17,7 +17,8 @@ function generateTransactionId() {
 export default {
   async makeTransaction(parent, args, context, info) {
     try {
-      let { amount, transactionType, transactionProof } = args.input;
+      let { amount, transactionType, transactionProof, bankAccountId } =
+        args.input;
 
       let { auth, authToken, userId, collections } = context;
       let { Transactions, Accounts } = collections;
@@ -26,9 +27,18 @@ export default {
         return new Error("Unauthorized");
       }
       await validateUser(context, userId);
-
+      console.log("transaction type is ", transactionType);
       if (transactionType === "deposit" && !transactionProof)
         return new Error("Please provide proof of transaction");
+
+      if (transactionType === "withdraw") {
+        const account = await Accounts.findOne({ _id: userId });
+        console.log("account in transaction is", account);
+        const userAmount = account?.wallets?.amount;
+        if (userAmount < amount) {
+          return new Error(`You cannot withdraw more than ${userAmount}`);
+        }
+      }
 
       let userAccount = await Accounts.findOne({ userId });
 
@@ -45,6 +55,7 @@ export default {
         createdAt,
         updatedAt: createdAt,
         transactionProof,
+        bankAccountId,
       };
       let createdTransaction = await Transactions.insertOne(data);
 
