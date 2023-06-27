@@ -2,7 +2,7 @@
   "name": "@partown/partown-api-plugin-transaction",
   "description": "Plugin for handling user transactions",
   "label": "Transaction Plugin",
-  "version": "6.10.1-development",
+  "version": "6.11.1-development",
   "main": "index.js",
   "type": "module",
   "engines": {

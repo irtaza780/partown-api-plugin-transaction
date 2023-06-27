@@ -27,16 +27,30 @@ export default {
         return new Error("Unauthorized");
       }
       await validateUser(context, userId);
-      console.log("transaction type is ", transactionType);
+
       if (transactionType === "deposit" && !transactionProof)
         return new Error("Please provide proof of transaction");
 
       if (transactionType === "withdraw") {
+        if (!bankAccountId) {
+          return new Error(
+            "Bank information is required to when making a withdrawal"
+          );
+        }
+
         const account = await Accounts.findOne({ _id: userId });
         console.log("account in transaction is", account);
         const userAmount = account?.wallets?.amount;
         if (userAmount < amount) {
-          return new Error(`You cannot withdraw more than ${userAmount}`);
+          return new Error("Insufficient funds");
+        }
+        if (userAmount > amount) {
+          await Accounts.updateOne(
+            {
+              _id: userId,
+            },
+            { $inc: { "wallets.amount": -amount, "wallets.escrow": amount } }
+          );
         }
       }
 
@@ -128,8 +142,6 @@ export default {
         _id: decodeOpaqueId(transactionBy).id,
       });
 
-      console.log("user Account is ", userAccount);
-
       let foundedTransaction = await Transactions.findOne({
         _id: ObjectID.ObjectId(transactionId),
       });
@@ -140,7 +152,7 @@ export default {
         userAccount?.wallets?.amount < foundedTransaction?.amount
       ) {
         return new Error(
-          "The user does not have sufficient funds to make this withdraw"
+          "The user does not have sufficient funds to make this withdrawal"
         );
       }
 
@@ -171,6 +183,21 @@ export default {
         { $set: { approvalStatus, updatedAt: new Date() } }
       );
 
+      if (approvedTransaction?.result?.n > 0 && approvalStatus === "approved") {
+        console.log("transaction type", transactionType);
+        if (foundedTransaction?.transactionType === "deposit") {
+          await Accounts.updateOne(
+            { _id: decodedAccountId },
+            { $inc: { "wallets.amount": amount } }
+          );
+        }
+        if (foundedTransaction?.transactionType === "withdraw") {
+          await Accounts.updateOne(
+            { _id: decodedAccountId },
+            { $inc: { "wallets.escrow": -amount } }
+          );
+        }
+      }
       let title =
         approvalStatus === "approved"
           ? "Transaction Approved"
