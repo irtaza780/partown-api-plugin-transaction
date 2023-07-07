@@ -3,6 +3,7 @@ import decodeOpaqueId from "@reactioncommerce/api-utils/decodeOpaqueId.js";
 import ReactionError from "@reactioncommerce/reaction-error";
 import _ from "lodash";
 import validateUser from "../utils/validateUser.js";
+import fundsApprovalNotification from "../utils/fundsApprovalNotification.js";
 
 function generateTransactionId() {
   let result = "";
@@ -203,10 +204,11 @@ export default {
           ? "Transaction Approved"
           : "Transaction Rejected";
 
+      const details = `Your request for ${transactionType} of ₦${amount} has been ${approvalStatus}`;
       if (approvedTransaction?.result?.n > 0) {
         await context.mutations.createNotification(context, {
           title,
-          details: `Your request for ${transactionType} of ₦${amount} has been ${approvalStatus}`,
+          details,
           hasDetails: true,
           message: "",
           status: null,
@@ -215,6 +217,14 @@ export default {
           image:
             "https://images.pexels.com/photos/3172740/pexels-photo-3172740.jpeg?cs=srgb&dl=pexels-%E6%9D%8E%E8%BF%9B-3172740.jpg&fm=jpg&w=640&h=640",
         });
+
+        await fundsApprovalNotification(
+          context,
+          decodedAccountId,
+          title,
+          details
+        );
+
         return true;
       }
 
