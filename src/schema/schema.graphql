@@ -49,6 +49,7 @@ type serviceCharges {
 
 type Transaction implements Node {
   _id: ID!
+
   amount: Float
   approvalStatus: approvalStatusEnum
   transactionBy: String
@@ -68,6 +69,7 @@ type Transaction implements Node {
   transactionProof: String
   bankAccountId: ID
   bankAccountInfo: BankDetails
+  txnReference: String
 }
 
 type TransactionEdge implements NodeEdge {

@@ -61,6 +61,12 @@ export default {
         ? userAccount?.profile?.transactionId
         : "n/a";
       const createdAt = new Date();
+
+      const timestamp = new Date().getTime();
+
+      // Round down the timestamp to remove decimal points
+      const txnReference = Math.floor(timestamp);
+
       let data = {
         amount,
         approvalStatus: "pending",
@@ -71,10 +77,11 @@ export default {
         updatedAt: createdAt,
         transactionProof,
         bankAccountId,
+        txnReference,
       };
       let createdTransaction = await Transactions.insertOne(data);
 
-      return { _id: createdTransaction?.insertedId };
+      return { _id: createdTransaction?.insertedId, txnReference };
     } catch (err) {
       return err;
     }
