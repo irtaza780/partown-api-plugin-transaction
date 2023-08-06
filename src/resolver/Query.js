@@ -86,32 +86,101 @@ export default {
   async getTradesHistory(parents, args, context, info) {
     try {
       const { userId, authToken, collections } = context;
-      const { Transactions } = collections;
+      const { Transactions, Catalog } = collections;
 
       if (!userId || !authToken) return new Error("Unauthorized");
 
-      let matchStage = {
-        $and: [
-          { transactionBy: userId },
-          {
-            $or: [
-              { transactionType: { $exists: false } },
-              { transactionType: null },
-            ],
-          },
+      let matchStage = [];
+
+      matchStage.push({ transactionBy: userId });
+      matchStage.push({
+        $or: [
+          { transactionType: { $exists: false } },
+          { transactionType: null },
         ],
-      };
-      const { searchQuery, ...connectionArgs } = args;
+      });
+
+      const {
+        searchQuery,
+        location,
+        propertySaleType,
+        propertyType,
+        ...connectionArgs
+      } = args;
 
       if (searchQuery) {
-        matchStage.productId = {
-          $in: await collections.Catalog.distinct("product._id", {
-            "product.title": { $regex: searchQuery, $options: "i" },
-          }),
-        };
+        // Add the condition for searchQuery
+        matchStage.push({
+          productId: {
+            $in: await Catalog.distinct("product._id", {
+              $or: [
+                {
+                  "product.title": {
+                    $regex: new RegExp(searchQuery, "i"),
+                  },
+                },
+                {
+                  "product.slug": {
+                    $regex: new RegExp(searchQuery, "i"),
+                  },
+                },
+                {
+                  "product.location.country": {
+                    $regex: new RegExp(searchQuery, "i"),
+                  },
+                },
+                {
+                  "product.location.state": {
+                    $regex: new RegExp(searchQuery, "i"),
+                  },
+                },
+                {
+                  "product.location.location": {
+                    $regex: new RegExp(searchQuery, "i"),
+                  },
+                },
+                {
+                  "product.propertyType": {
+                    $regex: new RegExp(searchQuery, "i"),
+                  },
+                },
+              ],
+            }),
+          },
+        });
       }
 
-      const tradeHistory = Transactions.find(matchStage);
+      if (location?.length) {
+        matchStage.push({
+          productId: {
+            $in: await Catalog.distinct("product._id", {
+              "product.location.state": { $in: location },
+            }),
+          },
+        });
+      }
+
+      if (propertyType?.length) {
+        matchStage.push({
+          productId: {
+            $in: await Catalog.distinct("product._id", {
+              "product.propertyType": { $in: propertyType },
+            }),
+          },
+        });
+      }
+
+      if (propertySaleType) {
+        matchStage.push({
+          productId: {
+            $in: await Catalog.distinct("product._id", {
+              "product.propertySaleType.type": propertySaleType,
+            }),
+          },
+        });
+      }
+
+      const tradeHistory = Transactions.find({ $and: matchStage });
 
       return getPaginatedResponse(tradeHistory, connectionArgs, {
         includeHasNextPage: wasFieldRequested("pageInfo.hasNextPage", info),
