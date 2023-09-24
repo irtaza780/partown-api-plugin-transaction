@@ -4,14 +4,35 @@ import ReactionError from "@reactioncommerce/reaction-error";
 async function sendEmailNotification(
   context,
   email,
-  messageHeader,
-  messageBody
+  firstName,
+  lastName,
+  transactionType,
+  approvalStatus,
+  description,
+  amount
 ) {
-  const bodyTemplate = "generic/template";
+  const bodyTemplate = "funds/approval";
+
+  const currentYear = new Date().getFullYear();
+
+  const facebook = process.env.FACEBOOK;
+  const instagram = process.env.INSTAGRAM;
+  const twitter = process.env.TWITTER;
+
+  const transactionHistoryLink = `${process.env.CLIENT_URL}/dashboard/accounthistory`;
 
   const dataForEmail = {
-    messageHeader,
-    messageBody,
+    currentYear,
+    firstName,
+    lastName,
+    transactionType,
+    approvalStatus,
+    description,
+    amount,
+    facebook,
+    instagram,
+    twitter,
+    transactionHistoryLink,
   };
 
   const {
@@ -35,8 +56,10 @@ async function sendEmailNotification(
 export default async function fundsApprovalNotification(
   context,
   userId,
-  messageHeader,
-  messageBody
+  transactionType,
+  approvalStatus,
+  description,
+  amount
 ) {
   const {
     collections: { Accounts },
@@ -47,6 +70,9 @@ export default async function fundsApprovalNotification(
   //destructuring account info
   let email = _.get(account, "emails[0].address");
 
+  let firstName = _.get(account, "profile.firstName");
+  let lastName = _.get(account, "profile.lastName");
+
   const hasEnabledEmailNotification = _.get(
     account,
     "userPreferences.contactPreferences.email"
@@ -56,8 +82,16 @@ export default async function fundsApprovalNotification(
     "userPreferences.contactPreferences.sms"
   );
   if (hasEnabledEmailNotification) {
-    console.log("email notification");
-    await sendEmailNotification(context, email, messageHeader, messageBody);
+    await sendEmailNotification(
+      context,
+      email,
+      firstName,
+      lastName,
+      transactionType,
+      approvalStatus,
+      description,
+      amount
+    );
   }
 
   if (hasEnabledSMSNotification) {

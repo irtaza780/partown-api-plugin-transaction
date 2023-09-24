@@ -35,7 +35,7 @@ export default {
       if (transactionType === "withdraw") {
         if (!bankAccountId) {
           return new Error(
-            "Bank information is required to when making a withdrawal"
+            "Bank information is required when making a withdrawal"
           );
         }
 
@@ -211,6 +211,14 @@ export default {
           ? "Transaction Approved"
           : "Transaction Rejected";
 
+      let description = "";
+
+      if (approvalStatus === "approved") {
+        description = "Congratulations, your transaction has been approved!";
+      } else {
+        description = "Your transaction has been rejected.";
+      }
+
       const details = `Your request for ${transactionType} of ₦${amount} has been ${approvalStatus}`;
       if (approvedTransaction?.result?.n > 0) {
         await context.mutations.createNotification(context, {
@@ -228,8 +236,10 @@ export default {
         await fundsApprovalNotification(
           context,
           decodedAccountId,
-          title,
-          details
+          transactionType,
+          approvalStatus,
+          description,
+          amount
         );
 
         return true;
