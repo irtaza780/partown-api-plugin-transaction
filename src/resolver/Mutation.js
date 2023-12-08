@@ -154,15 +154,15 @@ export default {
         _id: ObjectID.ObjectId(transactionId),
       });
 
-      if (
-        approvalStatus === "approved" &&
-        foundedTransaction?.transactionType === "withdraw" &&
-        userAccount?.wallets?.amount < foundedTransaction?.amount
-      ) {
-        return new Error(
-          "The user does not have sufficient funds to make this withdrawal"
-        );
-      }
+      // if (
+      //   approvalStatus === "approved" &&
+      //   foundedTransaction?.transactionType === "withdraw" &&
+      //   userAccount?.wallets?.amount < foundedTransaction?.amount
+      // ) {
+      //   return new Error(
+      //     "The user does not have sufficient funds to make this withdrawal"
+      //   );
+      // }
 
       if (foundedTransaction?.approvalStatus !== "pending") {
         return new Error(
